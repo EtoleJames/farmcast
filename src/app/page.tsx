@@ -6,6 +6,9 @@ import { getWeatherForecast } from "@/lib/weather";
 import SearchBar from "@/components/SearchBar";
 import WeatherPanel from "@/components/WeatherPanel";
 import ErrorMessage from "@/components/ErrorMessage";
+import ThemeToggle from "@/components/ThemeToggle";
+
+const QUICK_SEARCHES = ["Bomet", "Nairobi", "Nakuru", "Kisumu", "Meru", "Eldoret"];
 
 export default function Home() {
   const [forecast, setForecast] = useState<WeatherForecast | null>(null);
@@ -13,7 +16,6 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
 
   async function handleSearch(query: string) {
-    // Reset previous results before each new search
     setIsLoading(true);
     setError(null);
     setForecast(null);
@@ -22,64 +24,249 @@ export default function Home() {
       const data = await getWeatherForecast(query);
       setForecast(data);
     } catch (err) {
-      // Show the error message from the weather service,
-      // or fall back to a generic message if it's unexpected
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Something went wrong. Please try again.");
-      }
+      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }
   }
 
   return (
-    <main className="min-h-screen bg-green-50">
-      {/* Header */}
-      <header className="bg-white border-b border-green-100 shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 py-5">
-          <h1 className="text-2xl font-bold text-green-800 mb-1">
-            🌱 FarmCast
-          </h1>
-          <p className="text-sm text-gray-500">
-            Farm intelligence dashboard — weather forecasts and AI advisories
-          </p>
+    <div style={{ minHeight: "100vh", backgroundColor: "var(--bg)" }}>
+
+      {/* ── Navigation bar ───────────────────────────────────────────── */}
+      <nav
+        style={{
+          borderBottom: "1px solid var(--border)",
+          backgroundColor: "var(--bg-card)",
+          position: "sticky",
+          top: 0,
+          zIndex: 50,
+        }}
+      >
+        <div
+          style={{
+            maxWidth: "1100px",
+            margin: "0 auto",
+            padding: "0 24px",
+            height: "64px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          {/* Logo */}
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <span style={{ fontSize: "24px" }}>🌱</span>
+            <span
+              style={{
+                fontSize: "20px",
+                fontWeight: 700,
+                fontFamily: "var(--font-fraunces), serif",
+                color: "var(--text-primary)",
+              }}
+            >
+              FarmCast
+            </span>
+          </div>
+
+          {/* Nav links + toggle */}
+          <div style={{ display: "flex", alignItems: "center", gap: "32px" }}>
+            <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>
+              Powered by Open-Meteo · Gemini AI
+            </span>
+            <ThemeToggle />
+          </div>
         </div>
-      </header>
+      </nav>
 
-      {/* Search */}
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <SearchBar onSearch={handleSearch} isLoading={isLoading} />
+      {/* ── Hero ─────────────────────────────────────────────────────── */}
+      <section
+        style={{
+          backgroundColor: "var(--accent)",
+          padding: "80px 24px",
+        }}
+      >
+        <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+          {/* Eyebrow */}
+          <p
+            style={{
+              fontSize: "12px",
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: "var(--accent-green)",
+              marginBottom: "20px",
+            }}
+          >
+            ✦ Built for Kenya · Weather Intelligence · AI Farm Advisory
+          </p>
 
-        {error && <ErrorMessage message={error} />}
+          {/* Headline */}
+          <h1
+            style={{
+              fontSize: "clamp(36px, 5vw, 60px)",
+              fontWeight: 700,
+              fontFamily: "var(--font-fraunces), serif",
+              color: "#ffffff",
+              lineHeight: 1.1,
+              maxWidth: "700px",
+              marginBottom: "20px",
+            }}
+          >
+            Know your weather.{" "}
+            <span style={{ color: "var(--accent-green)" }}>Grow with confidence.</span>
+          </h1>
 
-        {/* Loading skeleton */}
+          <p
+            style={{
+              fontSize: "17px",
+              color: "rgba(255,255,255,0.6)",
+              maxWidth: "520px",
+              lineHeight: 1.7,
+              marginBottom: "40px",
+            }}
+          >
+            7-day forecasts for any location in Kenya — paired with an AI advisory
+            telling you exactly when to plant, irrigate, and harvest.
+          </p>
+
+          {/* Search */}
+          <SearchBar onSearch={handleSearch} isLoading={isLoading} />
+
+          {error && <ErrorMessage message={error} />}
+
+          {/* Quick search chips */}
+          <div style={{ display: "flex", gap: "8px", marginTop: "20px", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "13px", color: "rgba(255,255,255,0.4)", paddingTop: "6px" }}>
+              Try:
+            </span>
+            {QUICK_SEARCHES.map((city) => (
+              <button
+                key={city}
+                onClick={() => handleSearch(`${city}, Kenya`)}
+                style={{
+                  padding: "6px 14px",
+                  borderRadius: "999px",
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  backgroundColor: "rgba(255,255,255,0.07)",
+                  color: "rgba(255,255,255,0.75)",
+                  fontSize: "13px",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.15)";
+                  e.currentTarget.style.color = "#fff";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.07)";
+                  e.currentTarget.style.color = "rgba(255,255,255,0.75)";
+                }}
+              >
+                {city}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Results ──────────────────────────────────────────────────── */}
+      <main style={{ maxWidth: "1100px", margin: "0 auto", padding: "48px 24px" }}>
+
+        {/* Loading */}
         {isLoading && (
-          <div className="mt-10 text-center text-green-700 font-medium animate-pulse">
-            Fetching forecast for your location...
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px", padding: "80px 0" }}>
+            <div
+              style={{
+                width: "44px",
+                height: "44px",
+                borderRadius: "50%",
+                border: "3px solid var(--border-input)",
+                borderTopColor: "var(--accent-green)",
+                animation: "spin 0.7s linear infinite",
+              }}
+            />
+            <p style={{ fontSize: "15px", color: "var(--text-muted)" }}>Fetching forecast...</p>
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
           </div>
         )}
 
-        {/* Results */}
+        {/* Forecast results */}
         {forecast && !isLoading && (
-          <div className="mt-10">
+          <div
+            style={{
+              backgroundColor: "var(--bg-card)",
+              borderRadius: "20px",
+              border: "1px solid var(--border)",
+              padding: "32px",
+            }}
+          >
             <WeatherPanel forecast={forecast} />
           </div>
         )}
 
-        {/* Empty state — shown before any search */}
+        {/* Empty state */}
         {!forecast && !isLoading && !error && (
-          <div className="mt-16 text-center text-gray-400">
-            <p className="text-5xl mb-4">🌦️</p>
-            <p className="text-lg font-medium">Search a location to get started</p>
-            <p className="text-sm mt-1">
-              Try <span className="text-green-600 font-medium">Bomet, Kenya</span> or{" "}
-              <span className="text-green-600 font-medium">Nairobi</span>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "100px 24px",
+              textAlign: "center",
+              gap: "16px",
+            }}
+          >
+            <div
+              style={{
+                width: "72px",
+                height: "72px",
+                borderRadius: "50%",
+                backgroundColor: "var(--accent-green-bg)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "32px",
+                marginBottom: "8px",
+              }}
+            >
+              🌦️
+            </div>
+            <h3 style={{ fontSize: "20px", fontWeight: 700, color: "var(--text-primary)" }}>
+              Search a location to begin
+            </h3>
+            <p style={{ fontSize: "15px", color: "var(--text-secondary)", maxWidth: "380px", lineHeight: 1.6 }}>
+              Type any Kenyan town or city above. You will get a 7-day forecast
+              and an AI farm advisory in seconds.
             </p>
           </div>
         )}
-      </div>
-    </main>
+      </main>
+
+      {/* ── Footer ───────────────────────────────────────────────────── */}
+      <footer
+        style={{
+          borderTop: "1px solid var(--border)",
+          padding: "24px",
+          backgroundColor: "var(--bg-card)",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: "1100px",
+            margin: "0 auto",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            fontSize: "13px",
+            color: "var(--text-muted)",
+          }}
+        >
+          <span>🌱 FarmCast — Built for Kenyan farmers</span>
+          <span>Weather by Open-Meteo · AI by Gemini</span>
+        </div>
+      </footer>
+    </div>
   );
 }
