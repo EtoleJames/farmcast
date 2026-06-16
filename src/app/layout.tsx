@@ -14,7 +14,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      {/* suppressHydrationWarning is here because browser extensions like
+          Grammarly inject attributes into <body> after SSR, causing a
+          harmless but noisy hydration mismatch in development */}
+      <body suppressHydrationWarning>{children}</body>
     </html>
   );
 }
