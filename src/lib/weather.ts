@@ -1,7 +1,4 @@
 // Weather service — all Open-Meteo API calls live here.
-// The rest of the app never talks to Open-Meteo directly;
-// it goes through these functions. This makes it easy to
-// swap the weather provider later without touching the UI.
 
 import type {
   DailyWeather,
@@ -15,8 +12,6 @@ const GEO_BASE_URL = "https://geocoding-api.open-meteo.com/v1";
 const FORECAST_BASE_URL = "https://api.open-meteo.com/v1";
 
 // ─── WMO Weather Code Descriptions ───────────────────────────────────────────
-// Open-Meteo returns numeric WMO codes. We translate them to
-// plain English so the UI and Gemini both get readable descriptions.
 
 const WMO_DESCRIPTIONS: Record<number, string> = {
   0: "Clear Sky",
@@ -47,11 +42,9 @@ function getWeatherDescription(code: number): string {
 }
 
 // ─── Geocoding ────────────────────────────────────────────────────────────────
-// Converts a place name like "Bomet, Kenya" into lat/lng coordinates.
 
 export async function geocodeLocation(query: string): Promise<Location> {
   const url = `${GEO_BASE_URL}/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`;
-
   const response = await fetch(url);
 
   if (!response.ok) {
@@ -61,9 +54,7 @@ export async function geocodeLocation(query: string): Promise<Location> {
   const data = await response.json();
 
   if (!data.results || data.results.length === 0) {
-    throw new Error(
-      `No location found for "${query}". Try a more specific name.`
-    );
+    throw new Error(`No location found for "${query}". Try a more specific name.`);
   }
 
   const result: GeocodingResult = data.results[0];
@@ -76,18 +67,27 @@ export async function geocodeLocation(query: string): Promise<Location> {
   };
 }
 
-// ─── Forecast ─────────────────────────────────────────────────────────────────
-// Fetches a 7-day daily forecast for given coordinates.
+// ─── Location Suggestions ─────────────────────────────────────────────────────
+// Returns up to 5 matching locations for a partial query.
+// Used to power the search dropdown as the user types.
 
-async function fetchForecast(
-  latitude: number,
-  longitude: number
-): Promise<DailyWeather[]> {
+export async function getLocationSuggestions(query: string): Promise<GeocodingResult[]> {
+  const url = `${GEO_BASE_URL}/search?name=${encodeURIComponent(query)}&count=5&language=en&format=json`;
+  const response = await fetch(url);
+
+  if (!response.ok) return [];
+
+  const data = await response.json();
+  return data.results ?? [];
+}
+
+// ─── Forecast ─────────────────────────────────────────────────────────────────
+
+async function fetchForecast(latitude: number, longitude: number): Promise<DailyWeather[]> {
   const params = new URLSearchParams({
     latitude: latitude.toString(),
     longitude: longitude.toString(),
-    daily:
-      "temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,weather_code",
+    daily: "temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,weather_code",
     timezone: "auto",
     forecast_days: "7",
   });
@@ -101,9 +101,6 @@ async function fetchForecast(
 
   const data: OpenMeteoResponse = await response.json();
 
-  // Zip the parallel arrays from Open-Meteo into an array of objects.
-  // Open-Meteo returns { time: [...], temperature_2m_max: [...] } etc.
-  // We want [{ date, maxTemp, ... }, ...] — much easier to work with in the UI.
   return data.daily.time.map((date, index) => ({
     date,
     maxTemp: Math.round(data.daily.temperature_2m_max[index]),
@@ -116,14 +113,9 @@ async function fetchForecast(
 }
 
 // ─── Main Export ──────────────────────────────────────────────────────────────
-// This is the single function the UI calls. It geocodes the location
-// then fetches the forecast and returns everything together.
 
-export async function getWeatherForecast(
-  query: string
-): Promise<WeatherForecast> {
+export async function getWeatherForecast(query: string): Promise<WeatherForecast> {
   const location = await geocodeLocation(query);
   const daily = await fetchForecast(location.latitude, location.longitude);
-
   return { location, daily };
 }
