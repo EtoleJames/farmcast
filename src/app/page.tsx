@@ -1,10 +1,16 @@
+// page.tsx owns all state and coordinates the two data fetches.
+// Weather loads first, then the advisory is requested automatically.
+// Components only receive props — none fetch data themselves.
+
 "use client";
 
 import { useState } from "react";
-import type { WeatherForecast } from "@/types";
+import type { FarmAdvisory, WeatherForecast } from "@/types";
 import { getWeatherForecast } from "@/lib/weather";
+import { fetchFarmAdvisory } from "@/lib/advisory";
 import SearchBar from "@/components/SearchBar";
 import WeatherPanel from "@/components/WeatherPanel";
+import AdvisoryPanel from "@/components/AdvisoryPanel";
 import ErrorMessage from "@/components/ErrorMessage";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -12,28 +18,58 @@ const QUICK_SEARCHES = ["Bomet", "Nairobi", "Nakuru", "Kisumu", "Meru", "Eldoret
 
 export default function Home() {
   const [forecast, setForecast] = useState<WeatherForecast | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [advisory, setAdvisory] = useState<FarmAdvisory | null>(null);
+  const [isLoadingWeather, setIsLoadingWeather] = useState(false);
+  const [isLoadingAdvisory, setIsLoadingAdvisory] = useState(false);
+  const [weatherError, setWeatherError] = useState<string | null>(null);
+  const [advisoryError, setAdvisoryError] = useState<string | null>(null);
 
   async function handleSearch(query: string) {
-    setIsLoading(true);
-    setError(null);
+    // Reset everything on each new search
+    setIsLoadingWeather(true);
+    setWeatherError(null);
+    setAdvisoryError(null);
     setForecast(null);
+    setAdvisory(null);
 
     try {
-      const data = await getWeatherForecast(query);
-      setForecast(data);
+      // Step 1 — fetch weather
+      const weatherData = await getWeatherForecast(query);
+      setForecast(weatherData);
+      setIsLoadingWeather(false);
+
+      // Step 2 — use that weather data to fetch the advisory
+      // We do this sequentially because the advisory depends on the forecast
+      setIsLoadingAdvisory(true);
+      const advisoryData = await fetchFarmAdvisory(
+        weatherData.location,
+        weatherData.daily
+      );
+      setAdvisory(advisoryData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+      const message =
+        err instanceof Error ? err.message : "Something went wrong.";
+
+      // Work out which stage failed based on what we have so far
+      if (!forecast) {
+        setWeatherError(message);
+        setIsLoadingWeather(false);
+      } else {
+        setAdvisoryError(message);
+      }
     } finally {
-      setIsLoading(false);
+      setIsLoadingWeather(false);
+      setIsLoadingAdvisory(false);
     }
   }
+
+  const hasResults = forecast && !isLoadingWeather;
+  const showEmptyState = !forecast && !isLoadingWeather && !weatherError;
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "var(--bg)" }}>
 
-      {/* ── Navigation bar ───────────────────────────────────────────── */}
+      {/* ── Nav ──────────────────────────────────────────────────────── */}
       <nav
         style={{
           borderBottom: "1px solid var(--border)",
@@ -54,7 +90,6 @@ export default function Home() {
             justifyContent: "space-between",
           }}
         >
-          {/* Logo */}
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <span style={{ fontSize: "24px" }}>🌱</span>
             <span
@@ -69,10 +104,9 @@ export default function Home() {
             </span>
           </div>
 
-          {/* Nav links + toggle */}
-          <div style={{ display: "flex", alignItems: "center", gap: "32px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
             <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>
-              Powered by Open-Meteo · Gemini AI
+              Open-Meteo · Groq AI
             </span>
             <ThemeToggle />
           </div>
@@ -80,14 +114,8 @@ export default function Home() {
       </nav>
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
-      <section
-        style={{
-          backgroundColor: "var(--accent)",
-          padding: "80px 24px",
-        }}
-      >
+      <section style={{ backgroundColor: "var(--accent)", padding: "72px 24px" }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
-          {/* Eyebrow */}
           <p
             style={{
               fontSize: "12px",
@@ -101,43 +129,47 @@ export default function Home() {
             ✦ Built for Kenya · Weather Intelligence · AI Farm Advisory
           </p>
 
-          {/* Headline */}
           <h1
             style={{
-              fontSize: "clamp(36px, 5vw, 60px)",
+              fontSize: "clamp(34px, 5vw, 58px)",
               fontWeight: 700,
               fontFamily: "var(--font-fraunces), serif",
               color: "#ffffff",
               lineHeight: 1.1,
-              maxWidth: "700px",
+              maxWidth: "680px",
               marginBottom: "20px",
             }}
           >
             Know your weather.{" "}
-            <span style={{ color: "var(--accent-green)" }}>Grow with confidence.</span>
+            <span style={{ color: "var(--accent-green)" }}>
+              Grow with confidence.
+            </span>
           </h1>
 
           <p
             style={{
-              fontSize: "17px",
+              fontSize: "16px",
               color: "rgba(255,255,255,0.6)",
-              maxWidth: "520px",
+              maxWidth: "500px",
               lineHeight: 1.7,
-              marginBottom: "40px",
+              marginBottom: "36px",
             }}
           >
-            7-day forecasts for any location in Kenya — paired with an AI advisory
-            telling you exactly when to plant, irrigate, and harvest.
+            7-day forecasts for any Kenyan location — paired with an AI advisory
+            on when to plant, irrigate, and harvest.
           </p>
 
-          {/* Search */}
-          <SearchBar onSearch={handleSearch} isLoading={isLoading} />
+          <SearchBar onSearch={handleSearch} isLoading={isLoadingWeather} />
 
-          {error && <ErrorMessage message={error} />}
+          {weatherError && (
+            <div style={{ marginTop: "16px" }}>
+              <ErrorMessage message={weatherError} />
+            </div>
+          )}
 
           {/* Quick search chips */}
           <div style={{ display: "flex", gap: "8px", marginTop: "20px", flexWrap: "wrap" }}>
-            <span style={{ fontSize: "13px", color: "rgba(255,255,255,0.4)", paddingTop: "6px" }}>
+            <span style={{ fontSize: "13px", color: "rgba(255,255,255,0.35)", paddingTop: "6px" }}>
               Try:
             </span>
             {QUICK_SEARCHES.map((city) => (
@@ -173,9 +205,17 @@ export default function Home() {
       {/* ── Results ──────────────────────────────────────────────────── */}
       <main style={{ maxWidth: "1100px", margin: "0 auto", padding: "48px 24px" }}>
 
-        {/* Loading */}
-        {isLoading && (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px", padding: "80px 0" }}>
+        {/* Weather loading */}
+        {isLoadingWeather && (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "16px",
+              padding: "80px 0",
+            }}
+          >
             <div
               style={{
                 width: "44px",
@@ -186,27 +226,87 @@ export default function Home() {
                 animation: "spin 0.7s linear infinite",
               }}
             />
-            <p style={{ fontSize: "15px", color: "var(--text-muted)" }}>Fetching forecast...</p>
+            <p style={{ fontSize: "15px", color: "var(--text-muted)" }}>
+              Fetching forecast...
+            </p>
             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
           </div>
         )}
 
-        {/* Forecast results */}
-        {forecast && !isLoading && (
-          <div
-            style={{
-              backgroundColor: "var(--bg-card)",
-              borderRadius: "20px",
-              border: "1px solid var(--border)",
-              padding: "32px",
-            }}
-          >
-            <WeatherPanel forecast={forecast} />
+        {/* Results — weather + advisory stacked */}
+        {hasResults && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+
+            {/* Weather panel */}
+            <div
+              style={{
+                backgroundColor: "var(--bg-card)",
+                borderRadius: "20px",
+                border: "1px solid var(--border)",
+                padding: "32px",
+              }}
+            >
+              <WeatherPanel forecast={forecast} />
+            </div>
+
+            {/* Advisory panel — loading state */}
+            {isLoadingAdvisory && (
+              <div
+                style={{
+                  backgroundColor: "var(--bg-card)",
+                  borderRadius: "20px",
+                  border: "1px solid var(--border)",
+                  padding: "32px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "16px",
+                }}
+              >
+                <div
+                  style={{
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "50%",
+                    border: "3px solid var(--border-input)",
+                    borderTopColor: "var(--accent-green)",
+                    animation: "spin 0.7s linear infinite",
+                    flexShrink: 0,
+                  }}
+                />
+                <div>
+                  <p style={{ fontSize: "15px", fontWeight: 600, color: "var(--text-primary)" }}>
+                    Generating farm advisory...
+                  </p>
+                  <p style={{ fontSize: "13px", color: "var(--text-muted)", marginTop: "2px" }}>
+                    Groq AI is analysing your forecast
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Advisory error */}
+            {advisoryError && !isLoadingAdvisory && (
+              <ErrorMessage message={advisoryError} />
+            )}
+
+            {/* Advisory panel — results */}
+            {advisory && !isLoadingAdvisory && (
+              <div
+                style={{
+                  backgroundColor: "var(--bg-card)",
+                  borderRadius: "20px",
+                  border: "1px solid var(--border)",
+                  padding: "32px",
+                }}
+              >
+                <AdvisoryPanel advisory={advisory} />
+              </div>
+            )}
           </div>
         )}
 
         {/* Empty state */}
-        {!forecast && !isLoading && !error && (
+        {showEmptyState && (
           <div
             style={{
               display: "flex",
@@ -233,10 +333,19 @@ export default function Home() {
             >
               🌦️
             </div>
-            <h3 style={{ fontSize: "20px", fontWeight: 700, color: "var(--text-primary)" }}>
+            <h3
+              style={{ fontSize: "20px", fontWeight: 700, color: "var(--text-primary)" }}
+            >
               Search a location to begin
             </h3>
-            <p style={{ fontSize: "15px", color: "var(--text-secondary)", maxWidth: "380px", lineHeight: 1.6 }}>
+            <p
+              style={{
+                fontSize: "15px",
+                color: "var(--text-secondary)",
+                maxWidth: "380px",
+                lineHeight: 1.6,
+              }}
+            >
               Type any Kenyan town or city above. You will get a 7-day forecast
               and an AI farm advisory in seconds.
             </p>
@@ -264,7 +373,7 @@ export default function Home() {
           }}
         >
           <span>🌱 FarmCast — Built for Kenyan farmers</span>
-          <span>Weather by Open-Meteo · AI by Gemini</span>
+          <span>Weather by Open-Meteo · AI by Groq</span>
         </div>
       </footer>
     </div>
