@@ -7,7 +7,7 @@
 
 ## Live Demo
 
-🔗 **[farmcast.vercel.app](https://farmcast.vercel.app)**
+🔗 **[farmcast-zeta.vercel.app](https://farmcast-zeta.vercel.app)**
 
 ---
 
@@ -49,7 +49,7 @@ and FarmCast returns:
 
 ## Live Demo
 
-🔗 **[farmcast.vercel.app](https://farmcast.vercel.app)**
+🔗 **[farmcast-zeta.vercel.app](https://farmcast-zeta.vercel.app)**
 
 ---
 
@@ -228,6 +228,6 @@ automatic deployments on every push to main.
 
 Built by **James Etole** ·
 [LinkedIn](https://www.linkedin.com/in/james-etole-6a7115145/) ·
-[Live Demo](https://farmcast.vercel.app)
+[Live Demo](https://farmcast-zeta.vercel.app)
 
 

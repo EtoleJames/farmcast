@@ -10,6 +10,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: "/api/", // No need to index API routes
     },
-    sitemap: "https://farmcast.vercel.app/sitemap.xml",
+    sitemap: "https://farmcast-zeta.vercel.app/sitemap.xml",
   };
 }

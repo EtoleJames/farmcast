@@ -19,7 +19,7 @@ const fraunces = Fraunces({
 // without needing to execute JavaScript.
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://farmcast.vercel.app"),
+  metadataBase: new URL("https://farmcast-zeta.vercel.app"),
 
   title: {
     default: "FarmCast — Farm Intelligence Dashboard",
@@ -57,7 +57,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_KE",
-    url: "https://farmcast.vercel.app",
+    url: "https://farmcast-zeta.vercel.app",
     siteName: "FarmCast",
     title: "FarmCast — Farm Intelligence Dashboard",
     description:
