@@ -1,8 +1,10 @@
 // Weather service — all Open-Meteo API calls live here.
+// The rest of the app never talks to Open-Meteo directly.
 
 import type {
   DailyWeather,
   GeocodingResult,
+  HourlyDataPoint,
   Location,
   OpenMeteoResponse,
   WeatherForecast,
@@ -54,7 +56,9 @@ export async function geocodeLocation(query: string): Promise<Location> {
   const data = await response.json();
 
   if (!data.results || data.results.length === 0) {
-    throw new Error(`No location found for "${query}". Try a more specific name.`);
+    throw new Error(
+      `No location found for "${query}". Try a more specific name.`
+    );
   }
 
   const result: GeocodingResult = data.results[0];
@@ -68,10 +72,10 @@ export async function geocodeLocation(query: string): Promise<Location> {
 }
 
 // ─── Location Suggestions ─────────────────────────────────────────────────────
-// Returns up to 5 matching locations for a partial query.
-// Used to power the search dropdown as the user types.
 
-export async function getLocationSuggestions(query: string): Promise<GeocodingResult[]> {
+export async function getLocationSuggestions(
+  query: string
+): Promise<GeocodingResult[]> {
   const url = `${GEO_BASE_URL}/search?name=${encodeURIComponent(query)}&count=5&language=en&format=json`;
   const response = await fetch(url);
 
@@ -82,12 +86,19 @@ export async function getLocationSuggestions(query: string): Promise<GeocodingRe
 }
 
 // ─── Forecast ─────────────────────────────────────────────────────────────────
+// Fetches both daily and hourly data in a single API call.
+// Hourly data is grouped by date so WeatherCard can look up its own day.
 
-async function fetchForecast(latitude: number, longitude: number): Promise<DailyWeather[]> {
+async function fetchForecast(
+  latitude: number,
+  longitude: number
+): Promise<{ daily: DailyWeather[]; hourlyByDate: Record<string, HourlyDataPoint[]> }> {
   const params = new URLSearchParams({
     latitude: latitude.toString(),
     longitude: longitude.toString(),
-    daily: "temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,weather_code",
+    daily:
+      "temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,weather_code",
+    hourly: "temperature_2m,precipitation,wind_speed_10m",
     timezone: "auto",
     forecast_days: "7",
   });
@@ -101,7 +112,8 @@ async function fetchForecast(latitude: number, longitude: number): Promise<Daily
 
   const data: OpenMeteoResponse = await response.json();
 
-  return data.daily.time.map((date, index) => ({
+  // Build daily array
+  const daily: DailyWeather[] = data.daily.time.map((date, index) => ({
     date,
     maxTemp: Math.round(data.daily.temperature_2m_max[index]),
     minTemp: Math.round(data.daily.temperature_2m_min[index]),
@@ -110,12 +122,39 @@ async function fetchForecast(latitude: number, longitude: number): Promise<Daily
     weatherCode: data.daily.weather_code[index],
     description: getWeatherDescription(data.daily.weather_code[index]),
   }));
+
+  // Group hourly data by date string.
+  // Open-Meteo returns hourly times as "2024-03-15T14:00" — we split on "T"
+  // to get the date key, and format just the hour part for the chart x-axis.
+  const hourlyByDate: Record<string, HourlyDataPoint[]> = {};
+
+  data.hourly.time.forEach((isoTime, index) => {
+    const [date, timePart] = isoTime.split("T");
+    const hour = timePart?.slice(0, 5) ?? "";
+
+    if (!hourlyByDate[date]) {
+      hourlyByDate[date] = [];
+    }
+
+    hourlyByDate[date].push({
+      time: hour,
+      temperature: Math.round(data.hourly.temperature_2m[index]),
+      precipitation: data.hourly.precipitation[index] ?? 0,
+      windSpeed: Math.round(data.hourly.wind_speed_10m[index]),
+    });
+  });
+
+  return { daily, hourlyByDate };
 }
 
 // ─── Main Export ──────────────────────────────────────────────────────────────
 
 export async function getWeatherForecast(query: string): Promise<WeatherForecast> {
   const location = await geocodeLocation(query);
-  const daily = await fetchForecast(location.latitude, location.longitude);
-  return { location, daily };
+  const { daily, hourlyByDate } = await fetchForecast(
+    location.latitude,
+    location.longitude
+  );
+
+  return { location, daily, hourlyByDate };
 }

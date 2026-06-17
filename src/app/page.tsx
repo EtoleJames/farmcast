@@ -33,13 +33,12 @@ export default function Home() {
     setAdvisory(null);
 
     try {
-      // Step 1 — fetch weather
+      // Step 1 — fetch weather first
       const weatherData = await getWeatherForecast(query);
       setForecast(weatherData);
       setIsLoadingWeather(false);
 
-      // Step 2 — use that weather data to fetch the advisory
-      // We do this sequentially because the advisory depends on the forecast
+      // Step 2 — use the weather data to fetch the AI advisory
       setIsLoadingAdvisory(true);
       const advisoryData = await fetchFarmAdvisory(
         weatherData.location,
@@ -50,7 +49,7 @@ export default function Home() {
       const message =
         err instanceof Error ? err.message : "Something went wrong.";
 
-      // Work out which stage failed based on what we have so far
+      // Determine which stage failed based on what we have loaded so far
       if (!forecast) {
         setWeatherError(message);
         setIsLoadingWeather(false);
@@ -168,8 +167,21 @@ export default function Home() {
           )}
 
           {/* Quick search chips */}
-          <div style={{ display: "flex", gap: "8px", marginTop: "20px", flexWrap: "wrap" }}>
-            <span style={{ fontSize: "13px", color: "rgba(255,255,255,0.35)", paddingTop: "6px" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: "8px",
+              marginTop: "20px",
+              flexWrap: "wrap",
+            }}
+          >
+            <span
+              style={{
+                fontSize: "13px",
+                color: "rgba(255,255,255,0.35)",
+                paddingTop: "6px",
+              }}
+            >
               Try:
             </span>
             {QUICK_SEARCHES.map((city) => (
@@ -205,7 +217,7 @@ export default function Home() {
       {/* ── Results ──────────────────────────────────────────────────── */}
       <main style={{ maxWidth: "1100px", margin: "0 auto", padding: "48px 24px" }}>
 
-        {/* Weather loading */}
+        {/* Weather loading spinner */}
         {isLoadingWeather && (
           <div
             style={{
@@ -233,7 +245,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* Results — weather + advisory stacked */}
+        {/* Results — weather and advisory stacked */}
         {hasResults && (
           <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
 
@@ -249,7 +261,7 @@ export default function Home() {
               <WeatherPanel forecast={forecast} />
             </div>
 
-            {/* Advisory panel — loading state */}
+            {/* Advisory loading */}
             {isLoadingAdvisory && (
               <div
                 style={{
@@ -274,10 +286,22 @@ export default function Home() {
                   }}
                 />
                 <div>
-                  <p style={{ fontSize: "15px", fontWeight: 600, color: "var(--text-primary)" }}>
+                  <p
+                    style={{
+                      fontSize: "15px",
+                      fontWeight: 600,
+                      color: "var(--text-primary)",
+                    }}
+                  >
                     Generating farm advisory...
                   </p>
-                  <p style={{ fontSize: "13px", color: "var(--text-muted)", marginTop: "2px" }}>
+                  <p
+                    style={{
+                      fontSize: "13px",
+                      color: "var(--text-muted)",
+                      marginTop: "2px",
+                    }}
+                  >
                     Groq AI is analysing your forecast
                   </p>
                 </div>
@@ -289,7 +313,7 @@ export default function Home() {
               <ErrorMessage message={advisoryError} />
             )}
 
-            {/* Advisory panel — results */}
+            {/* Advisory panel */}
             {advisory && !isLoadingAdvisory && (
               <div
                 style={{
@@ -305,7 +329,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* Empty state */}
+        {/* Empty state — before first search */}
         {showEmptyState && (
           <div
             style={{
@@ -334,7 +358,11 @@ export default function Home() {
               🌦️
             </div>
             <h3
-              style={{ fontSize: "20px", fontWeight: 700, color: "var(--text-primary)" }}
+              style={{
+                fontSize: "20px",
+                fontWeight: 700,
+                color: "var(--text-primary)",
+              }}
             >
               Search a location to begin
             </h3>
@@ -357,7 +385,6 @@ export default function Home() {
       <footer
         style={{
           borderTop: "1px solid var(--border)",
-          padding: "24px",
           backgroundColor: "var(--bg-card)",
         }}
       >
@@ -365,15 +392,75 @@ export default function Home() {
           style={{
             maxWidth: "1100px",
             margin: "0 auto",
+            padding: "24px",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            fontSize: "13px",
-            color: "var(--text-muted)",
+            flexWrap: "wrap",
+            gap: "12px",
           }}
         >
-          <span>🌱 FarmCast — Built for Kenyan farmers</span>
-          <span>Weather by Open-Meteo · AI by Groq</span>
+          {/* Left — project identity */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span style={{ fontSize: "18px" }}>🌱</span>
+            <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>
+              FarmCast — Weather by Open-Meteo · AI by Groq
+            </span>
+          </div>
+
+          {/* Right — your personal identity */}
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+            <span
+              style={{
+                fontSize: "13px",
+                color: "var(--text-secondary)",
+                fontWeight: 500,
+              }}
+            >
+              Built by James Etole
+            </span>
+
+            <a
+              href="https://www.linkedin.com/in/james-etole-6a7115145/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "6px 14px",
+                borderRadius: "999px",
+                border: "1px solid var(--border-input)",
+                backgroundColor: "var(--bg-input)",
+                color: "var(--text-secondary)",
+                fontSize: "13px",
+                fontWeight: 500,
+                textDecoration: "none",
+                transition: "all 0.2s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "var(--accent-green-bg)";
+                e.currentTarget.style.borderColor = "var(--accent-green)";
+                e.currentTarget.style.color = "var(--accent)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "var(--bg-input)";
+                e.currentTarget.style.borderColor = "var(--border-input)";
+                e.currentTarget.style.color = "var(--text-secondary)";
+              }}
+            >
+              {/* LinkedIn SVG icon — inline so no external image needed */}
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+              </svg>
+              LinkedIn
+            </a>
+          </div>
         </div>
       </footer>
     </div>

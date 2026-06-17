@@ -14,18 +14,30 @@ export interface Location {
 // ─── Weather ─────────────────────────────────────────────────────────────────
 
 export interface DailyWeather {
-  date: string;           // ISO date string e.g. "2024-03-15"
-  maxTemp: number;        // °C
-  minTemp: number;        // °C
-  precipitation: number;  // mm
-  windSpeed: number;      // km/h
-  weatherCode: number;    // WMO weather interpretation code
-  description: string;    // human-readable e.g. "Partly Cloudy"
+  date: string;
+  maxTemp: number;
+  minTemp: number;
+  precipitation: number;
+  windSpeed: number;
+  weatherCode: number;
+  description: string;
 }
 
 export interface WeatherForecast {
   location: Location;
   daily: DailyWeather[];
+  // Hourly data is stored here keyed by date string e.g. "2024-03-15"
+  // so each WeatherCard can look up its own day's hourly data on click
+  hourlyByDate: Record<string, HourlyDataPoint[]>;
+}
+
+// A single hour's weather data — used to power the chart modal
+export interface HourlyDataPoint {
+  // Display time e.g. "14:00" — shown on the chart x-axis
+  time: string;
+  temperature: number;
+  precipitation: number;
+  windSpeed: number;
 }
 
 // ─── Advisory ────────────────────────────────────────────────────────────────
@@ -38,19 +50,17 @@ export interface FarmAdvisory {
   bestDaysToFarm: string[];
 }
 
-// ─── API Response shapes ─────────────────────────────────────────────────────
+// ─── API Response shapes ──────────────────────────────────────────────────────
 
-// Open-Meteo geocoding response
 export interface GeocodingResult {
   id: number;
   name: string;
   country: string;
-  admin1?: string; 
+  admin1?: string;
   latitude: number;
   longitude: number;
 }
 
-// Open-Meteo forecast response (only the fields we use)
 export interface OpenMeteoResponse {
   daily: {
     time: string[];
@@ -59,5 +69,12 @@ export interface OpenMeteoResponse {
     precipitation_sum: number[];
     wind_speed_10m_max: number[];
     weather_code: number[];
+  };
+  // Hourly arrays — same length, one entry per hour across all 7 days
+  hourly: {
+    time: string[];
+    temperature_2m: number[];
+    precipitation: number[];
+    wind_speed_10m: number[];
   };
 }
