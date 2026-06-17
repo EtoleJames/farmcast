@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630">
+  <rect width="1200" height="630" fill="#1a3c2a"/>
+  <rect width="1200" height="630" fill="url(#grad)" opacity="0.4"/>
+  <defs>
+    <radialGradient id="grad" cx="80%" cy="20%">
+      <stop offset="0%" stop-color="#4caf72" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#1a3c2a" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <text x="80" y="180" font-family="serif" font-size="72" font-weight="bold" fill="white">FarmCast</text>
+  <text x="80" y="260" font-family="sans-serif" font-size="32" fill="#4caf72">Farm Intelligence Dashboard</text>
+  <line x1="80" y1="300" x2="400" y2="300" stroke="#4caf72" stroke-width="2" opacity="0.4"/>
+  <text x="80" y="360" font-family="sans-serif" font-size="26" fill="rgba(255,255,255,0.7)">7-day weather forecasts</text>
+  <text x="80" y="410" font-family="sans-serif" font-size="26" fill="rgba(255,255,255,0.7)">AI-powered farm advisories</text>
+  <text x="80" y="460" font-family="sans-serif" font-size="26" fill="rgba(255,255,255,0.7)">Built for Kenyan farmers</text>
+  <text x="80" y="580" font-family="sans-serif" font-size="20" fill="rgba(255,255,255,0.35)">Built by James Etole · farmcast.vercel.app</text>
+</svg>
