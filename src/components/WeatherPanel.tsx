@@ -27,7 +27,11 @@ export default function WeatherPanel({ forecast }: WeatherPanelProps) {
           7-Day Forecast · Tap a card for hourly detail
         </p>
         <h2
-          style={{ fontSize: "22px", fontWeight: 700, color: "var(--text-primary)" }}
+          style={{
+            fontSize: "22px",
+            fontWeight: 700,
+            color: "var(--text-primary)",
+          }}
         >
           {location.name},{" "}
           <span style={{ color: "var(--accent-green)", fontWeight: 400 }}>
@@ -36,13 +40,28 @@ export default function WeatherPanel({ forecast }: WeatherPanelProps) {
         </h2>
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(7, 1fr)",
-          gap: "10px",
-        }}
-      >
+      {/*
+        CSS Grid with auto-fit so cards reflow naturally on any screen:
+        - Mobile:  2 columns (each card at least 130px wide)
+        - Tablet:  4 columns
+        - Desktop: all 7 in one row
+        We use a style tag here because inline styles can't use
+        media queries — this is the cleanest approach without Tailwind.
+      */}
+      <style>{`
+        .forecast-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+          gap: 10px;
+        }
+        @media (min-width: 900px) {
+          .forecast-grid {
+            grid-template-columns: repeat(7, 1fr);
+          }
+        }
+      `}</style>
+
+      <div className="forecast-grid">
         {daily.map((day, index) => (
           <WeatherCard
             key={day.date}

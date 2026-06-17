@@ -79,14 +79,21 @@ export default function AdvisoryPanel({ advisory }: AdvisoryPanelProps) {
           </p>
         </div>
 
-        {/* Planting + Irrigation side by side */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "16px",
-          }}
-        >
+        {/* Planting + Irrigation — stack on mobile, side by side on desktop */}
+        <style>{`
+          .advisory-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+          }
+          @media (min-width: 640px) {
+            .advisory-grid {
+              grid-template-columns: 1fr 1fr;
+            }
+          }
+        `}</style>
+
+        <div className="advisory-grid">
           <AdvisoryCard
             emoji="🌱"
             label="Planting"
@@ -121,7 +128,16 @@ export default function AdvisoryPanel({ advisory }: AdvisoryPanelProps) {
             >
               ⚠️ Risk Warnings
             </p>
-            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "8px" }}>
+            <ul
+              style={{
+                listStyle: "none",
+                padding: 0,
+                margin: 0,
+                display: "flex",
+                flexDirection: "column",
+                gap: "8px",
+              }}
+            >
               {advisory.riskWarnings.map((warning, index) => (
                 <li
                   key={index}
@@ -133,7 +149,13 @@ export default function AdvisoryPanel({ advisory }: AdvisoryPanelProps) {
                     color: "var(--text-primary)",
                   }}
                 >
-                  <span style={{ color: "#dc2626", flexShrink: 0, marginTop: "2px" }}>
+                  <span
+                    style={{
+                      color: "#dc2626",
+                      flexShrink: 0,
+                      marginTop: "2px",
+                    }}
+                  >
                     •
                   </span>
                   {warning}
@@ -193,6 +215,7 @@ export default function AdvisoryPanel({ advisory }: AdvisoryPanelProps) {
 
 // ─── Sub-component ────────────────────────────────────────────────────────────
 // Small reusable card used for Planting and Irrigation sections.
+// Kept in this file because it is only ever used by AdvisoryPanel.
 
 function AdvisoryCard({
   emoji,
